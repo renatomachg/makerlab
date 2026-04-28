@@ -2,25 +2,29 @@
  * js/modules/cotizador/cotizador.js
  * Módulo Cotizador - alta/edición y listado de cotizaciones
  *
- * Tabla `cotizaciones` esperada con columnas:
- *   id, contacto_id, estado, monto, detalles (jsonb), created_at
+ * El form (#cotizador-form) y los inputs viven en index.html.
+ * Este módulo se encarga de:
+ *   - Poblar el <select id="cot-cliente">
+ *   - Cablear los eventos del form (#btn-save-cot, change de cliente)
+ *   - Cargar cotizaciones y renderizar la TABLA en #cotizador-table
+ *   - Cablear botones de la tabla (edit-cot / delete-cot)
  *
- * El campo `detalles` se guarda como objeto JSON con la forma:
- *   { items: [{ descripcion, cantidad, precio }, ...] }
+ * Tabla `cotizaciones`:
+ *   id, contacto_id, estado, monto, detalles (jsonb), created_at
+ * El campo `detalles` se guarda como { items: [{ descripcion, cantidad, precio }, ...] }
  */
 
 import { supabase } from '../../core/db.js';
 
-const MOUNT_SELECTOR = '#module-container';
+let currentMountSelector = '#cotizador-table';
 
 /* ===================================================
  * DATA
  * ================================================= */
 
 /**
- * Carga todas las cotizaciones (más recientes primero).
- * Hace join ligero a contactos para mostrar el nombre del cliente.
- * @returns {Promise<Array>}
+ * Carga todas las cotizaciones (más recientes primero), con join
+ * a contactos para mostrar el nombre del cliente.
  */
 export async function loadCotizaciones() {
     try {
@@ -40,9 +44,7 @@ export async function loadCotizaciones() {
     }
 }
 
-/**
- * Carga la lista de contactos para poblar el <select> de cliente.
- */
+/** Carga contactos para poblar el <select id="cot-cliente">. */
 async function loadContactosParaSelect() {
     try {
         const { data, error } = await supabase
@@ -64,7 +66,7 @@ async function loadContactosParaSelect() {
 /**
  * Inserta o actualiza una cotización.
  * - Si data.id existe → UPDATE
- * - Si no                 → INSERT con estado por defecto 'borrador'
+ * - Si no             → INSERT con estado por defecto 'borrador'
  *
  * @param {object} data - { id?, contacto_id, estado, monto, detalles: {items: [...]} }
  * @returns {Promise<{data, error}>}
@@ -73,16 +75,14 @@ export async function saveCotizacion(data) {
     try {
         if (data && data.id) {
             const { id, ...rest } = data;
-            const res = await supabase
+            return await supabase
                 .from('cotizaciones')
                 .update(rest)
                 .eq('id', id)
                 .select()
                 .single();
-            return res;
         }
 
-        // INSERT
         const payload = {
             contacto_id: data.contacto_id,
             estado: data.estado || 'borrador',
@@ -90,12 +90,11 @@ export async function saveCotizacion(data) {
             detalles: data.detalles || { items: [] }
         };
 
-        const res = await supabase
+        return await supabase
             .from('cotizaciones')
             .insert([payload])
             .select()
             .single();
-        return res;
     } catch (err) {
         console.error('[cotizador] excepción guardando cotización:', err);
         return { data: null, error: err };
@@ -133,9 +132,20 @@ function badgeForEstado(estado) {
     return '<span class="' + cls + '">' + esc(estado || '—') + '</span>';
 }
 
-function renderTable(cotizaciones) {
-    if (!cotizaciones.length) {
-        return '<div class="card"><p>No hay cotizaciones todavía.</p></div>';
+/**
+ * Renderiza la tabla de cotizaciones dentro del mountSelector.
+ */
+export function renderCotizacionesTable(cotizaciones, mountSelector) {
+    const mount = document.querySelector(mountSelector);
+    if (!mount) {
+        console.error('[cotizador] no se encontró el contenedor:', mountSelector);
+        return;
+    }
+
+    if (!cotizaciones || !cotizaciones.length) {
+        mount.innerHTML = '<div class="card"><p>No hay cotizaciones todavía.</p></div>';
+        bindTableEvents(mount);
+        return;
     }
 
     let html = '';
@@ -145,75 +155,137 @@ function renderTable(cotizaciones) {
     html += '  </tr></thead><tbody>';
 
     cotizaciones.forEach((c) => {
-        const cliente = (c.contactos && c.contactos.nombre) || c.cliente || '—';
+        const cliente = (c.contactos && c.contactos.nombre) || '—';
         html += '<tr>';
         html += '<td>' + esc(cliente) + '</td>';
         html += '<td>' + fmtMoney(c.monto) + '</td>';
         html += '<td>' + badgeForEstado(c.estado) + '</td>';
         html += '<td>';
-        html += '  <button class="btn btn-sm btn-secondary" data-action="edit-cotizacion" data-id="' + esc(c.id) + '">Editar</button> ';
-        html += '  <button class="btn btn-sm btn-danger" data-action="delete-cotizacion" data-id="' + esc(c.id) + '">Eliminar</button>';
+        html += '  <button class="btn btn-sm btn-secondary" data-action="edit-cot" data-id="' + esc(c.id) + '">Editar</button> ';
+        html += '  <button class="btn btn-sm btn-danger" data-action="delete-cot" data-id="' + esc(c.id) + '">Eliminar</button>';
         html += '</td>';
         html += '</tr>';
     });
 
     html += '</tbody></table></div>';
-    return html;
-}
+    mount.innerHTML = html;
 
-function renderForm(contactos) {
-    let options = '<option value="">Selecciona un cliente…</option>';
-    contactos.forEach((c) => {
-        options += '<option value="' + esc(c.id) + '">' + esc(c.nombre) + '</option>';
-    });
-
-    let html = '';
-    html += '<div class="card">';
-    html += '  <h3>Nueva cotización</h3>';
-    html += '  <form id="cotizador-form">';
-    html += '    <div class="form-group">';
-    html += '      <label for="cot-cliente">Cliente</label>';
-    html += '      <select id="cot-cliente" name="contacto_id" required>' + options + '</select>';
-    html += '    </div>';
-    html += '    <div class="form-group">';
-    html += '      <label for="cot-monto">Monto</label>';
-    html += '      <input type="number" step="0.01" min="0" id="cot-monto" name="monto" required>';
-    html += '    </div>';
-    html += '    <div class="form-group">';
-    html += '      <label for="cot-items">Items (JSON)</label>';
-    html += '      <textarea id="cot-items" name="items" rows="4" placeholder=\'[{"descripcion":"Servicio","cantidad":1,"precio":1000}]\'></textarea>';
-    html += '    </div>';
-    html += '    <button type="submit" class="btn btn-primary">Guardar</button>';
-    html += '    <p class="error-msg" id="cot-error"></p>';
-    html += '  </form>';
-    html += '</div>';
-    return html;
-}
-
-function renderModule(cotizaciones, contactos) {
-    let html = '';
-    html += '<div class="page-header">';
-    html += '  <h2>Cotizador</h2>';
-    html += '</div>';
-    html += renderForm(contactos);
-    html += renderTable(cotizaciones);
-    return html;
+    bindTableEvents(mount);
 }
 
 /* ===================================================
- * EVENTOS DEL FORM
+ * EVENTOS DE TABLA
  * ================================================= */
 
-/**
- * Engancha el submit del form a saveCotizacion() y refresca la tabla.
- */
-function attachFormHandlers(mount) {
-    const form = mount.querySelector('#cotizador-form');
-    if (!form) return;
+function bindTableEvents(mount) {
+    if (mount.dataset.bound === '1') return;
+    mount.dataset.bound = '1';
 
+    mount.addEventListener('click', async (e) => {
+        const btn = e.target.closest('[data-action]');
+        if (!btn) return;
+
+        const action = btn.dataset.action;
+        const id = btn.dataset.id;
+
+        if (action === 'edit-cot') {
+            await fillFormForEdit(id);
+        } else if (action === 'delete-cot') {
+            if (!confirm('¿Eliminar esta cotización?')) return;
+            try {
+                const { error } = await supabase
+                    .from('cotizaciones')
+                    .delete()
+                    .eq('id', id);
+                if (error) {
+                    alert('Error al eliminar: ' + (error.message || error));
+                    return;
+                }
+                await refreshTable();
+            } catch (err) {
+                console.error('[cotizador] excepción eliminando:', err);
+                alert('Error al eliminar.');
+            }
+        }
+    });
+}
+
+/**
+ * Llena el form (#cotizador-form) con los datos de la cotización
+ * indicada y la marca como "en edición" vía form.dataset.editId.
+ */
+async function fillFormForEdit(id) {
+    try {
+        const { data, error } = await supabase
+            .from('cotizaciones')
+            .select('*')
+            .eq('id', id)
+            .single();
+
+        if (error || !data) {
+            console.error('[cotizador] no se pudo cargar para editar:', error);
+            return;
+        }
+
+        const form = document.getElementById('cotizador-form');
+        if (!form) return;
+
+        form.querySelector('#cot-cliente').value = data.contacto_id || '';
+        form.querySelector('#cot-monto').value = data.monto || '';
+        const items = (data.detalles && data.detalles.items) || [];
+        form.querySelector('#cot-items').value = JSON.stringify(items, null, 2);
+        form.dataset.editId = data.id;
+
+        // Disparar change para refrescar dataset.clienteNombre
+        form.querySelector('#cot-cliente').dispatchEvent(new Event('change'));
+    } catch (err) {
+        console.error('[cotizador] excepción cargando para edición:', err);
+    }
+}
+
+/* ===================================================
+ * EVENTOS DEL FORM (existente en HTML)
+ * ================================================= */
+
+/** Pobla el <select id="cot-cliente"> con los contactos. */
+async function populateClientesSelect() {
+    const select = document.getElementById('cot-cliente');
+    if (!select) return;
+
+    const contactos = await loadContactosParaSelect();
+
+    let html = '<option value="">Selecciona un cliente…</option>';
+    contactos.forEach((c) => {
+        html += '<option value="' + esc(c.id) + '" data-nombre="' + esc(c.nombre) + '">' + esc(c.nombre) + '</option>';
+    });
+    select.innerHTML = html;
+}
+
+/**
+ * Cablea los eventos del form (idempotente).
+ *  - submit / click en #btn-save-cot → saveCotizacion
+ *  - change en #cot-cliente → guarda nombre seleccionado en form.dataset
+ */
+function bindFormEvents() {
+    const form = document.getElementById('cotizador-form');
+    if (!form || form.dataset.bound === '1') return;
+    form.dataset.bound = '1';
+
+    const select = form.querySelector('#cot-cliente');
+    const errorEl = form.querySelector('#cot-error');
+
+    /* change cliente: rellenar nombre seleccionado en el form */
+    if (select) {
+        select.addEventListener('change', () => {
+            const opt = select.options[select.selectedIndex];
+            const nombre = opt && opt.dataset.nombre ? opt.dataset.nombre : '';
+            form.dataset.clienteNombre = nombre;
+        });
+    }
+
+    /* submit: validar, armar payload y guardar */
     form.addEventListener('submit', async (e) => {
         e.preventDefault();
-        const errorEl = mount.querySelector('#cot-error');
         if (errorEl) errorEl.textContent = '';
 
         const contacto_id = form.querySelector('#cot-cliente').value;
@@ -242,6 +314,9 @@ function attachFormHandlers(mount) {
             monto,
             detalles: { items }
         };
+        if (form.dataset.editId) {
+            payload.id = form.dataset.editId;
+        }
 
         const { error } = await saveCotizacion(payload);
         if (error) {
@@ -249,9 +324,17 @@ function attachFormHandlers(mount) {
             return;
         }
 
-        // Refrescar
-        await initCotizador();
+        form.reset();
+        delete form.dataset.editId;
+        delete form.dataset.clienteNombre;
+        await refreshTable();
     });
+}
+
+/** Re-render interno tras una mutación. */
+async function refreshTable() {
+    const cotizaciones = await loadCotizaciones();
+    renderCotizacionesTable(cotizaciones, currentMountSelector);
 }
 
 /* ===================================================
@@ -259,22 +342,24 @@ function attachFormHandlers(mount) {
  * ================================================= */
 
 /**
- * Inicializa el módulo Cotizador: carga datos, render y handlers.
+ * Inicializa el módulo Cotizador.
+ * @param {string} [mountSelector='#cotizador-table']
  */
-export async function initCotizador(mountSelector = MOUNT_SELECTOR) {
+export async function initCotizador(mountSelector = '#cotizador-table') {
+    currentMountSelector = mountSelector;
+
     const mount = document.querySelector(mountSelector);
     if (!mount) {
         console.error('[cotizador] no se encontró el contenedor:', mountSelector);
         return;
     }
 
-    mount.innerHTML = '<div class="loader">Cargando cotizador…</div>';
+    mount.innerHTML = '<div class="loader">Cargando cotizaciones…</div>';
 
-    const [cotizaciones, contactos] = await Promise.all([
-        loadCotizaciones(),
-        loadContactosParaSelect()
-    ]);
+    // Poblar select y enganchar handlers (idempotente)
+    await populateClientesSelect();
+    bindFormEvents();
 
-    mount.innerHTML = renderModule(cotizaciones, contactos);
-    attachFormHandlers(mount);
+    const cotizaciones = await loadCotizaciones();
+    renderCotizacionesTable(cotizaciones, mountSelector);
 }
