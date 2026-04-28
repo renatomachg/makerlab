@@ -151,6 +151,12 @@
     </section>
 
     <!-- =========================================
+         SUPABASE (UMD desde CDN — expone window.supabase)
+         Debe cargar ANTES del script type=module
+         ========================================= -->
+    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+
+    <!-- =========================================
          APP SCRIPT (ES6 modules)
          ========================================= -->
     <script type="module">
