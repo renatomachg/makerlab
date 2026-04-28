@@ -13,7 +13,9 @@
  * (mismo shape que devuelve el SDK de Supabase).
  */
 
-import { createClient } from '@supabase/supabase-js';
+/* Supabase se carga vía UMD desde CDN en index.html y queda
+ * expuesto en window.supabase. Tomamos createClient desde ahí. */
+const { createClient } = window.supabase;
 
 /* ---------------------------------------------------
  * Configuración
