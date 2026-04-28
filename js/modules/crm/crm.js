@@ -2,28 +2,28 @@
  * js/modules/crm/crm.js
  * Módulo CRM - gestión de contactos
  *
- * Renderiza una tabla con los contactos guardados en Supabase
- * y permite crearlos. Las acciones de editar/eliminar quedan
- * cableadas a botones (los handlers se exponen vía data-* para
- * que la app principal los ate).
+ * El chrome (header, botón "+ Nuevo Contacto") vive en index.html
+ * dentro de #module-crm. Este módulo solo se encarga de:
+ *   - Cargar contactos
+ *   - Renderizar la TABLA en el div #crm-table
+ *   - Cablear eventos de los botones (delegación)
  */
 
 import { supabase } from '../../core/db.js';
 
-/**
- * id del nodo donde se monta el módulo CRM.
- * El index.html ya tiene <div id="module-container">, pero
- * dejamos un selector configurable por si cambia.
+/* Selector del div donde se monta la tabla. Se actualiza en initCRM
+ * para que las recargas internas (después de delete, etc.) sepan
+ * dónde re-renderizar.
  */
-const MOUNT_SELECTOR = '#module-container';
+let currentMountSelector = '#crm-table';
 
 /* ===================================================
- * DATA: lectura
+ * DATA
  * ================================================= */
 
 /**
- * Carga todos los contactos desde Supabase.
- * @returns {Promise<Array>} arreglo de contactos (vacío si error)
+ * Carga todos los contactos ordenados por nombre.
+ * @returns {Promise<Array>}
  */
 export async function loadContactos() {
     try {
@@ -43,10 +43,6 @@ export async function loadContactos() {
     }
 }
 
-/* ===================================================
- * DATA: escritura
- * ================================================= */
-
 /**
  * Crea un contacto nuevo.
  * @param {object} data - { nombre, email, empresa, ... }
@@ -54,12 +50,11 @@ export async function loadContactos() {
  */
 export async function createContacto(data) {
     try {
-        const res = await supabase
+        return await supabase
             .from('contactos')
             .insert([data])
             .select()
             .single();
-        return res;
     } catch (err) {
         console.error('[crm] excepción creando contacto:', err);
         return { data: null, error: err };
@@ -70,9 +65,7 @@ export async function createContacto(data) {
  * RENDER
  * ================================================= */
 
-/**
- * Escapa texto para evitar inyección al meterlo en innerHTML.
- */
+/** Escapa texto para usar en innerHTML. */
 function esc(value) {
     if (value === null || value === undefined) return '';
     return String(value)
@@ -84,11 +77,21 @@ function esc(value) {
 }
 
 /**
- * Construye el HTML de la tabla de contactos.
+ * Renderiza la tabla de contactos dentro del mountSelector.
+ * @param {Array} contactos
+ * @param {string} mountSelector - selector CSS del div destino (ej. '#crm-table')
  */
-function renderTable(contactos) {
-    if (!contactos.length) {
-        return '<div class="card"><p>No hay contactos todavía.</p></div>';
+export function renderContactosTable(contactos, mountSelector) {
+    const mount = document.querySelector(mountSelector);
+    if (!mount) {
+        console.error('[crm] no se encontró el contenedor:', mountSelector);
+        return;
+    }
+
+    if (!contactos || !contactos.length) {
+        mount.innerHTML = '<div class="card"><p>No hay contactos todavía.</p></div>';
+        bindTableEvents(mount);
+        return;
     }
 
     let html = '';
@@ -110,20 +113,72 @@ function renderTable(contactos) {
     });
 
     html += '</tbody></table></div>';
-    return html;
+    mount.innerHTML = html;
+
+    bindTableEvents(mount);
+}
+
+/* ===================================================
+ * EVENTOS
+ * ================================================= */
+
+/**
+ * Cablea click delegado sobre la tabla. Idempotente:
+ * usa dataset.bound para no duplicar listeners.
+ */
+function bindTableEvents(mount) {
+    if (mount.dataset.bound === '1') return;
+    mount.dataset.bound = '1';
+
+    mount.addEventListener('click', async (e) => {
+        const btn = e.target.closest('[data-action]');
+        if (!btn) return;
+
+        const action = btn.dataset.action;
+        const id = btn.dataset.id;
+
+        if (action === 'edit-contacto') {
+            // TODO: abrir modal de edición
+            console.log('[crm] editar contacto:', id);
+        } else if (action === 'delete-contacto') {
+            if (!confirm('¿Eliminar este contacto?')) return;
+            try {
+                const { error } = await supabase
+                    .from('contactos')
+                    .delete()
+                    .eq('id', id);
+                if (error) {
+                    alert('Error al eliminar: ' + (error.message || error));
+                    return;
+                }
+                await refreshTable();
+            } catch (err) {
+                console.error('[crm] excepción eliminando:', err);
+                alert('Error al eliminar.');
+            }
+        }
+    });
 }
 
 /**
- * Construye el bloque entero del módulo (header + tabla).
+ * Cablea el botón "+ Nuevo Contacto" del HTML (#btn-new-contacto).
+ * Idempotente.
  */
-function renderModule(contactos) {
-    let html = '';
-    html += '<div class="page-header">';
-    html += '  <h2>CRM - Contactos</h2>';
-    html += '  <button class="btn btn-primary" data-action="new-contacto">+ Nuevo contacto</button>';
-    html += '</div>';
-    html += renderTable(contactos);
-    return html;
+function bindNewButton() {
+    const btn = document.getElementById('btn-new-contacto');
+    if (!btn || btn.dataset.bound === '1') return;
+    btn.dataset.bound = '1';
+
+    btn.addEventListener('click', () => {
+        // TODO: abrir modal de creación
+        console.log('[crm] abrir modal nuevo contacto');
+    });
+}
+
+/** Re-render interno tras una mutación. */
+async function refreshTable() {
+    const contactos = await loadContactos();
+    renderContactosTable(contactos, currentMountSelector);
 }
 
 /* ===================================================
@@ -131,10 +186,12 @@ function renderModule(contactos) {
  * ================================================= */
 
 /**
- * Inicializa el módulo CRM: carga contactos y los renderiza.
- * @param {string} [mountSelector] - selector CSS donde montar (default #module-container)
+ * Inicializa el módulo CRM: carga contactos y renderiza la tabla.
+ * @param {string} [mountSelector='#crm-table']
  */
-export async function initCRM(mountSelector = MOUNT_SELECTOR) {
+export async function initCRM(mountSelector = '#crm-table') {
+    currentMountSelector = mountSelector;
+
     const mount = document.querySelector(mountSelector);
     if (!mount) {
         console.error('[crm] no se encontró el contenedor:', mountSelector);
@@ -142,7 +199,8 @@ export async function initCRM(mountSelector = MOUNT_SELECTOR) {
     }
 
     mount.innerHTML = '<div class="loader">Cargando contactos…</div>';
+    bindNewButton();
 
     const contactos = await loadContactos();
-    mount.innerHTML = renderModule(contactos);
+    renderContactosTable(contactos, mountSelector);
 }
