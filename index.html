@@ -1,1 +1,119 @@
-[PEGA AQUÍ TODO EL CONTENIDO DEL index.html DESCARGADO]
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Makerlab 1.0 - CRM</title>
+  <link rel="stylesheet" href="css/core.css">
+</head>
+<body>
+  <div id="app">
+    <div id="login-screen" class="screen active">
+      <div class="login-form">
+        <h1>Makerlab 1.0</h1>
+        <p class="subtitle">CRM para Maker Home</p>
+        <div class="form-group">
+          <label for="email">Email</label>
+          <input type="email" id="email" placeholder="tu@email.com" />
+        </div>
+        <div class="form-group">
+          <label for="password">Contraseña</label>
+          <input type="password" id="password" placeholder="••••••••" />
+        </div>
+        <button class="btn-primary" onclick="window.loginUser()">Entrar</button>
+        <p class="login-note">Demo: cualquier email/contraseña funciona</p>
+      </div>
+    </div>
+    <div id="dashboard-screen" class="screen">
+      <header class="dashboard-header">
+        <div class="header-left">
+          <h1>Makerlab 1.0</h1>
+          <p class="user-info">Bienvenido, <span id="user-name">Renato</span></p>
+        </div>
+        <nav class="main-nav">
+          <button class="nav-btn active" data-module="crm" onclick="window.switchModule('crm')">👥 CRM</button>
+          <button class="nav-btn" data-module="cotizador" onclick="window.switchModule('cotizador')">📄 Cotizador</button>
+          <button class="nav-btn" data-module="pipeline" onclick="window.switchModule('pipeline')">📊 Pipeline</button>
+          <button class="nav-btn logout-btn" onclick="window.logoutUser()">🚪 Salir</button>
+        </nav>
+      </header>
+      <main id="content" class="main-content">
+        <div id="module-crm" class="module-container active">
+          <h2>👥 CRM</h2>
+          <p>Gestión de Contactos, Empresas y Activity Feed</p>
+          <table>
+            <thead>
+              <tr><th>Nombre</th><th>Email</th><th>Empresa</th><th>Acciones</th></tr>
+            </thead>
+            <tbody>
+              <tr><td>Juan García</td><td>juan@example.com</td><td>Acme Corp</td><td><button class="btn-sm">Editar</button></td></tr>
+              <tr><td>María López</td><td>maria@example.com</td><td>Tech Solutions</td><td><button class="btn-sm">Editar</button></td></tr>
+            </tbody>
+          </table>
+        </div>
+        <div id="module-cotizador" class="module-container">
+          <h2>📄 Cotizador</h2>
+          <p>Crear y gestionar cotizaciones</p>
+          <div class="form-group"><label>Cliente</label><input type="text" placeholder="Nombre del cliente"></div>
+          <div class="form-group"><label>Monto</label><input type="number" placeholder="$0.00"></div>
+          <button class="btn-primary">Crear Cotización</button>
+          <h3 style="margin-top: 30px;">Cotizaciones Recientes</h3>
+          <table>
+            <thead><tr><th>Cliente</th><th>Monto</th><th>Estado</th><th>Fecha</th></tr></thead>
+            <tbody>
+              <tr><td>Acme Corp</td><td>$5,000.00</td><td><span class="badge badge-warning">Pendiente</span></td><td>2026-04-25</td></tr>
+              <tr><td>Tech Solutions</td><td>$3,500.00</td><td><span class="badge badge-success">Enviada</span></td><td>2026-04-24</td></tr>
+            </tbody>
+          </table>
+        </div>
+        <div id="module-pipeline" class="module-container">
+          <h2>📊 Pipeline</h2>
+          <p>Vista de órdenes por estado</p>
+          <table>
+            <thead><tr><th>Cliente</th><th>Monto</th><th>Estado</th><th>Lead Score</th><th>Acciones</th></tr></thead>
+            <tbody>
+              <tr><td>Acme Corp</td><td>$5,000.00</td><td><span class="badge badge-warning">Cotizado</span></td><td>75/100</td><td><button class="btn-sm">Ver</button></td></tr>
+              <tr><td>Tech Solutions</td><td>$3,500.00</td><td><span class="badge badge-success">Confirmado</span></td><td>85/100</td><td><button class="btn-sm">Ver</button></td></tr>
+              <tr><td>Global Industries</td><td>$2,200.00</td><td><span class="badge badge-danger">Rechazado</span></td><td>35/100</td><td><button class="btn-sm">Ver</button></td></tr>
+            </tbody>
+          </table>
+        </div>
+      </main>
+    </div>
+  </div>
+  <script>
+    window.loginUser = function() {
+      const email = document.getElementById('email').value;
+      const password = document.getElementById('password').value;
+      if (!email || !password) {alert('Por favor ingresa email y contraseña'); return;}
+      localStorage.setItem('user_email', email);
+      localStorage.setItem('user_name', email.split('@')[0]);
+      document.getElementById('login-screen').classList.remove('active');
+      document.getElementById('dashboard-screen').classList.add('active');
+      document.getElementById('user-name').textContent = email.split('@')[0];
+    };
+    window.logoutUser = function() {
+      localStorage.removeItem('user_email');
+      localStorage.removeItem('user_name');
+      document.getElementById('login-screen').classList.add('active');
+      document.getElementById('dashboard-screen').classList.remove('active');
+      document.getElementById('email').value = '';
+      document.getElementById('password').value = '';
+    };
+    window.switchModule = function(moduleName) {
+      document.querySelectorAll('.module-container').forEach(m => m.classList.remove('active'));
+      document.getElementById(`module-${moduleName}`).classList.add('active');
+      document.querySelectorAll('.nav-btn:not(.logout-btn)').forEach(btn => btn.classList.remove('active'));
+      event.target.classList.add('active');
+    };
+    window.addEventListener('DOMContentLoaded', function() {
+      const savedEmail = localStorage.getItem('user_email');
+      if (savedEmail) {
+        document.getElementById('login-screen').classList.remove('active');
+        document.getElementById('dashboard-screen').classList.add('active');
+        document.getElementById('user-name').textContent = savedEmail.split('@')[0];
+      }
+    });
+  </script>
+</body>
+</html>
