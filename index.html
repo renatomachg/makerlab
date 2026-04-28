@@ -1,0 +1,211 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="description" content="Makerlab 1.0 - CRM para Maker Home">
+    <title>Makerlab 1.0 - CRM</title>
+    <link rel="stylesheet" href="css/core.css">
+</head>
+<body>
+
+    <!-- =========================================
+         LOGIN SCREEN
+         ========================================= -->
+    <section id="login-screen">
+        <div class="login-box">
+            <h1>Makerlab 1.0</h1>
+            <p class="subtitle">CRM para Maker Home</p>
+
+            <form id="login-form" autocomplete="on">
+                <div class="form-group">
+                    <label for="login-email">Email</label>
+                    <input
+                        type="email"
+                        id="login-email"
+                        name="email"
+                        placeholder="tu@email.com"
+                        required
+                        autocomplete="email">
+                </div>
+
+                <div class="form-group">
+                    <label for="login-password">Contraseña</label>
+                    <input
+                        type="password"
+                        id="login-password"
+                        name="password"
+                        placeholder="••••••••"
+                        required
+                        autocomplete="current-password">
+                </div>
+
+                <button type="submit" class="btn btn-primary btn-block">
+                    Entrar
+                </button>
+
+                <p class="error-msg" id="login-error"></p>
+            </form>
+        </div>
+    </section>
+
+    <!-- =========================================
+         DASHBOARD SCREEN
+         ========================================= -->
+    <section id="dashboard-screen" class="hidden">
+
+        <!-- Header -->
+        <header class="app-header">
+            <div class="header-inner">
+                <div class="brand">
+                    <span class="logo-dot"></span>
+                    <span>Makerlab 1.0</span>
+                </div>
+                <div class="user-info">
+                    <span class="user-email" id="user-email">usuario@makerlab.mx</span>
+                </div>
+            </div>
+        </header>
+
+        <!-- Nav -->
+        <nav class="app-nav">
+            <ul>
+                <li><button data-module="crm" class="nav-btn active">CRM</button></li>
+                <li><button data-module="cotizador" class="nav-btn">Cotizador</button></li>
+                <li><button data-module="pipeline" class="nav-btn">Pipeline</button></li>
+                <li><button id="btn-logout" class="nav-btn">Salir</button></li>
+            </ul>
+        </nav>
+
+        <!-- Contenido principal donde se cargan módulos dinámicamente -->
+        <main class="app-main">
+            <div id="module-container">
+                <div class="loader">Cargando módulo…</div>
+            </div>
+        </main>
+    </section>
+
+    <!-- =========================================
+         SCRIPTS TEMPORALES (DEMO - sin auth real)
+         ========================================= -->
+    <script>
+        (function () {
+            'use strict';
+
+            const loginScreen = document.getElementById('login-screen');
+            const dashboardScreen = document.getElementById('dashboard-screen');
+            const loginForm = document.getElementById('login-form');
+            const loginError = document.getElementById('login-error');
+            const userEmail = document.getElementById('user-email');
+            const moduleContainer = document.getElementById('module-container');
+            const navButtons = document.querySelectorAll('.nav-btn[data-module]');
+            const btnLogout = document.getElementById('btn-logout');
+
+            /* ---------- Auth (DEMO - sin auth real) ---------- */
+            function showDashboard(email) {
+                loginScreen.classList.add('hidden');
+                dashboardScreen.classList.remove('hidden');
+                userEmail.textContent = email;
+                loadModule('crm');
+            }
+
+            function showLogin() {
+                dashboardScreen.classList.add('hidden');
+                loginScreen.classList.remove('hidden');
+                loginForm.reset();
+                loginError.textContent = '';
+            }
+
+            loginForm.addEventListener('submit', function (e) {
+                e.preventDefault();
+                const email = document.getElementById('login-email').value.trim();
+                const password = document.getElementById('login-password').value;
+
+                if (!email || !password) {
+                    loginError.textContent = 'Completa email y contraseña.';
+                    return;
+                }
+
+                // DEMO: cualquier credencial entra
+                loginError.textContent = '';
+                showDashboard(email);
+            });
+
+            btnLogout.addEventListener('click', function () {
+                showLogin();
+            });
+
+            /* ---------- Carga dinámica de módulos (DEMO) ---------- */
+            const demoModules = {
+                crm: {
+                    title: 'CRM - Clientes',
+                    actionLabel: '+ Nuevo cliente',
+                    headers: ['Nombre', 'Email', 'Teléfono', 'Estado', ''],
+                    rows: [
+                        ['Ana López', 'ana@example.com', '555-0101', '<span class="badge badge-success">Activo</span>', '<button class="btn btn-sm btn-secondary">Ver</button>'],
+                        ['Juan Pérez', 'juan@example.com', '555-0102', '<span class="badge">Prospecto</span>', '<button class="btn btn-sm btn-secondary">Ver</button>'],
+                        ['María Gómez', 'maria@example.com', '555-0103', '<span class="badge badge-warning">Pendiente</span>', '<button class="btn btn-sm btn-secondary">Ver</button>']
+                    ]
+                },
+                cotizador: {
+                    title: 'Cotizador',
+                    actionLabel: '+ Nueva cotización',
+                    headers: ['Folio', 'Cliente', 'Total', 'Fecha', 'Estado'],
+                    rows: [
+                        ['COT-001', 'Ana López', '$12,500', '2026-04-20', '<span class="badge badge-success">Aceptada</span>'],
+                        ['COT-002', 'Juan Pérez', '$8,300', '2026-04-22', '<span class="badge badge-warning">Pendiente</span>'],
+                        ['COT-003', 'María Gómez', '$24,900', '2026-04-25', '<span class="badge badge-danger">Rechazada</span>']
+                    ]
+                },
+                pipeline: {
+                    title: 'Pipeline de ventas',
+                    actionLabel: '+ Nueva oportunidad',
+                    headers: ['Oportunidad', 'Cliente', 'Etapa', 'Monto', 'Cierre'],
+                    rows: [
+                        ['Casa Polanco', 'Ana López', '<span class="badge">Negociación</span>', '$450,000', '2026-05-15'],
+                        ['Depto Roma', 'Juan Pérez', '<span class="badge badge-warning">Propuesta</span>', '$280,000', '2026-06-01'],
+                        ['Loft Condesa', 'María Gómez', '<span class="badge badge-success">Cierre</span>', '$320,000', '2026-05-30']
+                    ]
+                }
+            };
+
+            function loadModule(name) {
+                const mod = demoModules[name];
+                if (!mod) {
+                    moduleContainer.innerHTML = '<div class="card"><p>Módulo no encontrado.</p></div>';
+                    return;
+                }
+
+                let html = '';
+                html += '<div class="page-header">';
+                html += '  <h2>' + mod.title + '</h2>';
+                html += '  <button class="btn btn-primary">' + mod.actionLabel + '</button>';
+                html += '</div>';
+                html += '<div class="table-wrapper"><table><thead><tr>';
+                mod.headers.forEach(function (h) {
+                    html += '<th>' + h + '</th>';
+                });
+                html += '</tr></thead><tbody>';
+                mod.rows.forEach(function (r) {
+                    html += '<tr>';
+                    r.forEach(function (c) {
+                        html += '<td>' + c + '</td>';
+                    });
+                    html += '</tr>';
+                });
+                html += '</tbody></table></div>';
+
+                moduleContainer.innerHTML = html;
+            }
+
+            navButtons.forEach(function (btn) {
+                btn.addEventListener('click', function () {
+                    navButtons.forEach(function (b) { b.classList.remove('active'); });
+                    btn.classList.add('active');
+                    loadModule(btn.dataset.module);
+                });
+            });
+        })();
+    </script>
+</body>
+</html>

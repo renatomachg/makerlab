@@ -1,0 +1,481 @@
+/* ===========================
+   Makerlab 1.0 - core.css
+   Color principal: #667eea
+   =========================== */
+
+/* ---- Reset ---- */
+*,
+*::before,
+*::after {
+    box-sizing: border-box;
+    margin: 0;
+    padding: 0;
+}
+
+html,
+body {
+    height: 100%;
+}
+
+body {
+    font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto,
+        "Helvetica Neue", Arial, sans-serif;
+    font-size: 14px;
+    line-height: 1.5;
+    color: #333;
+    background-color: #f5f6fa;
+    -webkit-font-smoothing: antialiased;
+    -moz-osx-font-smoothing: grayscale;
+}
+
+a {
+    color: #667eea;
+    text-decoration: none;
+}
+
+a:hover {
+    text-decoration: underline;
+}
+
+img {
+    max-width: 100%;
+    display: block;
+}
+
+button {
+    font-family: inherit;
+    cursor: pointer;
+    border: none;
+    background: none;
+}
+
+input,
+select,
+textarea {
+    font-family: inherit;
+    font-size: inherit;
+}
+
+ul,
+ol {
+    list-style: none;
+}
+
+/* ---- Utilidades ---- */
+.hidden {
+    display: none !important;
+}
+
+.container {
+    max-width: 1200px;
+    margin: 0 auto;
+    padding: 0 20px;
+}
+
+/* ===========================
+   LOGIN SCREEN
+   =========================== */
+#login-screen {
+    min-height: 100vh;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+    padding: 20px;
+}
+
+.login-box {
+    background: #fff;
+    border-radius: 12px;
+    padding: 40px 36px;
+    width: 100%;
+    max-width: 400px;
+    box-shadow: 0 20px 60px rgba(0, 0, 0, 0.3);
+}
+
+.login-box h1 {
+    text-align: center;
+    color: #667eea;
+    font-size: 28px;
+    margin-bottom: 8px;
+}
+
+.login-box .subtitle {
+    text-align: center;
+    color: #888;
+    font-size: 13px;
+    margin-bottom: 28px;
+}
+
+.form-group {
+    margin-bottom: 18px;
+}
+
+.form-group label {
+    display: block;
+    font-size: 13px;
+    font-weight: 600;
+    color: #555;
+    margin-bottom: 6px;
+}
+
+.form-group input,
+.form-group select,
+.form-group textarea {
+    width: 100%;
+    padding: 11px 14px;
+    border: 1px solid #ddd;
+    border-radius: 6px;
+    font-size: 14px;
+    background: #fafafa;
+    transition: border-color 0.2s, box-shadow 0.2s, background 0.2s;
+}
+
+.form-group input:focus,
+.form-group select:focus,
+.form-group textarea:focus {
+    outline: none;
+    border-color: #667eea;
+    background: #fff;
+    box-shadow: 0 0 0 3px rgba(102, 126, 234, 0.15);
+}
+
+.error-msg {
+    color: #e74c3c;
+    font-size: 13px;
+    margin-top: 12px;
+    text-align: center;
+    min-height: 18px;
+}
+
+/* ===========================
+   BOTONES
+   =========================== */
+.btn {
+    display: inline-block;
+    padding: 11px 20px;
+    border-radius: 6px;
+    font-size: 14px;
+    font-weight: 600;
+    cursor: pointer;
+    transition: background 0.2s, transform 0.1s, box-shadow 0.2s;
+    text-align: center;
+    border: 1px solid transparent;
+}
+
+.btn:active {
+    transform: translateY(1px);
+}
+
+.btn-primary {
+    background: #667eea;
+    color: #fff;
+}
+
+.btn-primary:hover {
+    background: #5568d3;
+    box-shadow: 0 4px 12px rgba(102, 126, 234, 0.35);
+}
+
+.btn-secondary {
+    background: #fff;
+    color: #667eea;
+    border-color: #667eea;
+}
+
+.btn-secondary:hover {
+    background: #f0f3ff;
+}
+
+.btn-danger {
+    background: #e74c3c;
+    color: #fff;
+}
+
+.btn-danger:hover {
+    background: #c0392b;
+}
+
+.btn-block {
+    display: block;
+    width: 100%;
+}
+
+.btn-sm {
+    padding: 6px 12px;
+    font-size: 13px;
+}
+
+/* ===========================
+   DASHBOARD
+   =========================== */
+#dashboard-screen {
+    min-height: 100vh;
+    display: flex;
+    flex-direction: column;
+}
+
+.app-header {
+    background: #fff;
+    border-bottom: 1px solid #e6e8ef;
+    box-shadow: 0 2px 4px rgba(0, 0, 0, 0.04);
+    position: sticky;
+    top: 0;
+    z-index: 50;
+}
+
+.header-inner {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 0 24px;
+    height: 60px;
+}
+
+.brand {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    font-size: 18px;
+    font-weight: 700;
+    color: #667eea;
+}
+
+.brand .logo-dot {
+    width: 28px;
+    height: 28px;
+    border-radius: 8px;
+    background: linear-gradient(135deg, #667eea, #764ba2);
+}
+
+.user-info {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    font-size: 13px;
+    color: #666;
+}
+
+/* ---- Nav ---- */
+.app-nav {
+    background: #fff;
+    border-bottom: 1px solid #e6e8ef;
+}
+
+.app-nav ul {
+    display: flex;
+    padding: 0 24px;
+    gap: 4px;
+    overflow-x: auto;
+}
+
+.app-nav li {
+    flex-shrink: 0;
+}
+
+.app-nav button {
+    padding: 14px 18px;
+    color: #555;
+    font-size: 14px;
+    font-weight: 500;
+    border-bottom: 3px solid transparent;
+    transition: color 0.2s, border-color 0.2s, background 0.2s;
+}
+
+.app-nav button:hover {
+    color: #667eea;
+    background: #f7f8ff;
+}
+
+.app-nav button.active {
+    color: #667eea;
+    border-bottom-color: #667eea;
+}
+
+/* ---- Main content ---- */
+.app-main {
+    flex: 1;
+    padding: 28px 24px;
+    background: #f5f6fa;
+}
+
+.page-header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    margin-bottom: 22px;
+    flex-wrap: wrap;
+    gap: 12px;
+}
+
+.page-header h2 {
+    font-size: 22px;
+    color: #2c3e50;
+    font-weight: 700;
+}
+
+.card {
+    background: #fff;
+    border-radius: 10px;
+    padding: 22px;
+    box-shadow: 0 1px 3px rgba(0, 0, 0, 0.06);
+    margin-bottom: 20px;
+}
+
+.card h3 {
+    font-size: 16px;
+    color: #2c3e50;
+    margin-bottom: 14px;
+}
+
+/* ===========================
+   TABLAS
+   =========================== */
+.table-wrapper {
+    background: #fff;
+    border-radius: 10px;
+    overflow: hidden;
+    box-shadow: 0 1px 3px rgba(0, 0, 0, 0.06);
+    overflow-x: auto;
+}
+
+table {
+    width: 100%;
+    border-collapse: collapse;
+    font-size: 14px;
+}
+
+thead {
+    background: #f7f8ff;
+}
+
+th {
+    text-align: left;
+    padding: 13px 16px;
+    color: #555;
+    font-weight: 600;
+    font-size: 13px;
+    text-transform: uppercase;
+    letter-spacing: 0.3px;
+    border-bottom: 2px solid #e6e8ef;
+    white-space: nowrap;
+}
+
+td {
+    padding: 13px 16px;
+    border-bottom: 1px solid #f0f1f5;
+    color: #444;
+}
+
+tbody tr {
+    transition: background 0.15s;
+}
+
+tbody tr:hover {
+    background: #fafbff;
+}
+
+tbody tr:last-child td {
+    border-bottom: none;
+}
+
+.badge {
+    display: inline-block;
+    padding: 3px 10px;
+    border-radius: 12px;
+    font-size: 12px;
+    font-weight: 600;
+    background: #eef0fa;
+    color: #667eea;
+}
+
+.badge-success {
+    background: #e6f7ee;
+    color: #27ae60;
+}
+
+.badge-warning {
+    background: #fff4e0;
+    color: #e67e22;
+}
+
+.badge-danger {
+    background: #fde7e4;
+    color: #e74c3c;
+}
+
+/* ===========================
+   LOADER
+   =========================== */
+.loader {
+    text-align: center;
+    color: #888;
+    padding: 40px 20px;
+    font-size: 14px;
+}
+
+/* ===========================
+   RESPONSIVE
+   =========================== */
+@media (max-width: 768px) {
+    .header-inner {
+        padding: 0 16px;
+        height: 56px;
+    }
+
+    .brand {
+        font-size: 16px;
+    }
+
+    .user-info {
+        font-size: 12px;
+        gap: 8px;
+    }
+
+    .user-info .user-email {
+        display: none;
+    }
+
+    .app-nav ul {
+        padding: 0 8px;
+    }
+
+    .app-nav button {
+        padding: 12px 14px;
+        font-size: 13px;
+    }
+
+    .app-main {
+        padding: 18px 14px;
+    }
+
+    .page-header h2 {
+        font-size: 18px;
+    }
+
+    .login-box {
+        padding: 32px 24px;
+    }
+
+    .login-box h1 {
+        font-size: 24px;
+    }
+
+    th,
+    td {
+        padding: 10px 12px;
+        font-size: 13px;
+    }
+}
+
+@media (max-width: 480px) {
+    .page-header {
+        flex-direction: column;
+        align-items: flex-start;
+    }
+
+    .btn {
+        font-size: 13px;
+        padding: 9px 16px;
+    }
+}
